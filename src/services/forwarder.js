@@ -88,16 +88,32 @@ var Service = function(params) {
         }
         return promize.then(function(result) {
           var replyTo = mapping.replyTo || eventName;
+          LX.has('debug') && LX.log('debug', LT.add({
+            eventName: eventName,
+            eventData: eventData,
+            result: result,
+            replyTo: replyTo
+          }).toMessage({
+            text: 'event[${eventName}] has done -> ${replyTo}: ${result}'
+          }));
           that.socket.emit(replyTo, result);
-          return true;
+          return result;
         }).catch(function(error) {
           var ename = lodash.get(pluginCfg, ['specialEvents', 'failed', 'name'], 'FAILED');
+          LX.has('error') && LX.log('error', LT.add({
+            eventName: eventName,
+            eventData: eventData,
+            error: error,
+            replyTo: ename
+          }).toMessage({
+            text: 'event[${eventName}] has failed -> ${replyTo}: ${error}'
+          }));
           that.socket.emit(ename, {
             status: -1,
             message: 'Service request has been failed',
             error: error
           });
-          return true;
+          return error;
         });
       }
     }

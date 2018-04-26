@@ -1,0 +1,15 @@
+{
+  "name": "private-test",
+  "version": "0.0.0",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "devebot",
+  "license": "MIT",
+  "devDependencies": {
+    "async": "^2.6.0",
+    "chai": "^4.1.2",
+    "loadsync": "^0.1.8",
+    "socket.io-client": "^2.1.0"
+  }
+}
