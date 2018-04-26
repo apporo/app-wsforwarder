@@ -65,7 +65,7 @@ var Service = function(params) {
     }));
 
     if (counselor.has(eventName)) {
-      var requestId = chores.getUUID();
+      var requestId = (eventData && eventData.requestId) || that.anchorId || LT.getLogID();
       var reqTR = LT.branch({ key: 'requestId', value: requestId });
       var mapping = counselor.get(eventName);
       var rpcData = mapping.transformRequest ? mapping.transformRequest(eventData) : eventData;
