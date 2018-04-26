@@ -36,8 +36,7 @@
   },
   "dependencies": {
     "app-websocket": "^0.2.0",
-    "devebot": "^0.2.6",
-    "locks": "^0.2.2"
+    "devebot": "^0.2.6"
   },
   "devDependencies": {
     "babel-cli": "^6.26.0",

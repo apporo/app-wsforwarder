@@ -3,7 +3,6 @@
 var Devebot = require('devebot');
 var chores = Devebot.require('chores');
 var lodash = Devebot.require('lodash');
-var locks = require('locks');
 
 var Service = function(params) {
   params = params || {};
