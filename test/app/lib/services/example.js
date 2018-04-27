@@ -31,6 +31,12 @@ var Service = function(params) {
       tags: [ blockRef, 'fibonacci' ],
       text: ' - fibonacci[${requestId}] is invoked with parameters: ${data}'
     }));
+    if (!data.number || data.number < 0 || data.number > 50) {
+      return Promise.reject({
+        input: data,
+        message: 'invalid input number'
+      });
+    }
     var fibonacci = new Fibonacci(data);
     var result = fibonacci.finish();
     result.actionId = data.actionId;
@@ -40,6 +46,9 @@ var Service = function(params) {
       tags: [ blockRef, 'fibonacci' ],
       text: ' - fibonacci[${requestId}] result: ${result}'
     }));
+    if (data.delay && data.delay > 0) {
+      return Promise.resolve(result).delay(data.delay);
+    }
     return result;
   }
 
