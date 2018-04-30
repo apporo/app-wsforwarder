@@ -1,20 +1,20 @@
 'use strict';
 
-var Devebot = require('devebot');
-var chores = Devebot.require('chores');
-var lodash = Devebot.require('lodash');
+const Devebot = require('devebot');
+const chores = Devebot.require('chores');
+const lodash = Devebot.require('lodash');
 
-var Service = function(params) {
+function Counselor(params) {
   params = params || {};
 
-  var LX = params.loggingFactory.getLogger();
-  var LT = params.loggingFactory.getTracer();
-  var packageName = params.packageName || 'app-wsforwarder';
-  var blockRef = chores.getBlockRef(__filename, packageName);
+  let LX = params.loggingFactory.getLogger();
+  let LT = params.loggingFactory.getTracer();
+  let packageName = params.packageName || 'app-wsforwarder';
+  let blockRef = chores.getBlockRef(__filename, packageName);
 
-  var pluginCfg = lodash.get(params, 'sandboxConfig', {});
+  let pluginCfg = lodash.get(params, 'sandboxConfig', {});
 
-  var mappings = {};
+  let mappings = {};
   
   if (pluginCfg.mappingStore) {
     lodash.merge(mappings, require(pluginCfg.mappingStore));
@@ -33,4 +33,4 @@ var Service = function(params) {
   }
 }
 
-module.exports = Service;
+module.exports = Counselor;

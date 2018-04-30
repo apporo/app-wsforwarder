@@ -1,31 +1,31 @@
 'use strict';
 
-var Devebot = require('devebot');
-var chores = Devebot.require('chores');
-var lodash = Devebot.require('lodash');
+const Devebot = require('devebot');
+const chores = Devebot.require('chores');
+const lodash = Devebot.require('lodash');
 
-var Service = function(params) {
+function Forwarder(params) {
   params = params || {};
 
-  var LX = params.loggingFactory.getLogger();
-  var LT = params.loggingFactory.getTracer();
-  var packageName = params.packageName || 'app-wsforwarder';
-  var blockRef = chores.getBlockRef(__filename, packageName);
+  let LX = params.loggingFactory.getLogger();
+  let LT = params.loggingFactory.getTracer();
+  let packageName = params.packageName || 'app-wsforwarder';
+  let blockRef = chores.getBlockRef(__filename, packageName);
 
   LX.has('silly') && LX.log('silly', LT.toMessage({
     tags: [ blockRef, 'constructor-begin' ],
     text: ' + constructor begin ...'
   }));
 
-  var pluginCfg = lodash.get(params, ['sandboxConfig'], {});
+  let pluginCfg = lodash.get(params, ['sandboxConfig'], {});
 
-  var counselor = params.counselor;
-  var sandboxRegistry = params["devebot/sandboxRegistry"];
-  var websocketTrigger = params["app-websocket/websocketTrigger"];
+  let counselor = params.counselor;
+  let sandboxRegistry = params["devebot/sandboxRegistry"];
+  let websocketTrigger = params["app-websocket/websocketTrigger"];
 
-  var lookupMethod = function(serviceName, methodName) {
-    var ref = {};
-    var commander = sandboxRegistry.lookupService("app-opmaster/commander");
+  let lookupMethod = function(serviceName, methodName) {
+    let ref = {};
+    let commander = sandboxRegistry.lookupService("app-opmaster/commander");
     if (commander) {
       ref.isRemote = true;
       ref.service = commander.lookupService(serviceName);
@@ -53,9 +53,9 @@ var Service = function(params) {
    * @param {*} next bypass the processing to the next interceptor
    */
 
-  var forwarderInterceptor = function(eventName, eventData, next) {
-    var that = this;
-    var LT = this.tracer;
+  let forwarderInterceptor = function(eventName, eventData, next) {
+    let that = this;
+    let LT = this.tracer;
     LX.has('silly') && LX.log('silly', LT.add({
       eventName: eventName,
       eventData: eventData
@@ -64,14 +64,14 @@ var Service = function(params) {
     }));
 
     if (counselor.has(eventName)) {
-      var requestId = (eventData && eventData.requestId) || that.anchorId || LT.getLogID();
-      var reqTR = LT.branch({ key: 'requestId', value: requestId });
-      var mapping = counselor.get(eventName);
-      var rpcData = mapping.transformRequest ? mapping.transformRequest(eventData) : eventData;
-      var ref = lookupMethod(mapping.serviceName, mapping.methodName);
-      var refMethod = ref && ref.method;
+      let requestId = (eventData && eventData.requestId) || that.anchorId || LT.getLogID();
+      let reqTR = LT.branch({ key: 'requestId', value: requestId });
+      let mapping = counselor.get(eventName);
+      let rpcData = mapping.transformRequest ? mapping.transformRequest(eventData) : eventData;
+      let ref = lookupMethod(mapping.serviceName, mapping.methodName);
+      let refMethod = ref && ref.method;
       if (lodash.isFunction(refMethod)) {
-        var promize;
+        let promize;
         if (ref.isRemote) {
           promize = refMethod(rpcData, {
             requestId: requestId,
@@ -86,7 +86,7 @@ var Service = function(params) {
           });
         }
         return promize.then(function(result) {
-          var replyTo = mapping.replyTo || eventName;
+          let replyTo = mapping.replyTo || eventName;
           LX.has('debug') && LX.log('debug', LT.add({
             eventName: eventName,
             eventData: eventData,
@@ -98,7 +98,7 @@ var Service = function(params) {
           that.socket.emit(replyTo, result);
           return result;
         }).catch(function(error) {
-          var ename = lodash.get(pluginCfg, ['specialEvents', 'failed', 'name'], 'FAILED');
+          let ename = lodash.get(pluginCfg, ['specialEvents', 'failed', 'name'], 'FAILED');
           LX.has('error') && LX.log('error', LT.add({
             eventName: eventName,
             eventData: eventData,
@@ -119,8 +119,8 @@ var Service = function(params) {
     next();
   }
 
-  var unmatchedInterceptor = function(eventName, eventData, next) {
-    var errorEvent = lodash.get(pluginCfg, ['specialEvents', 'unmatched', 'name'], null);
+  let unmatchedInterceptor = function(eventName, eventData, next) {
+    let errorEvent = lodash.get(pluginCfg, ['specialEvents', 'unmatched', 'name'], null);
     if (errorEvent) {
       LX.has('silly') && LX.log('silly', LT.add({
         eventName: eventName,
@@ -169,14 +169,14 @@ var Service = function(params) {
   websocketTrigger.addInterceptor('exception', unmatchedInterceptor);
 }
 
-Service.referenceList = [
+Forwarder.referenceList = [
   "counselor",
   "devebot/sandboxRegistry",
   "app-websocket/websocketTrigger"
 ];
 
-module.exports = Service;
+module.exports = Forwarder;
 
-var isTestingEnv = function() {
+let isTestingEnv = function() {
   return process.env.NODE_ENV === 'test';
 }
