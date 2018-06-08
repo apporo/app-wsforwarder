@@ -53,16 +53,12 @@ function Forwarder(params) {
    * @param {*} next bypass the processing to the next interceptor
    */
 
-  let forwarderInterceptor = function(eventName, eventData, next) {
+  let forwarderInterceptor = function(eventName, eventData, next, done) {
     let that = this;
     let LT = this.tracer;
-    LX.has('silly') && LX.log('silly', LT.add({
-      eventName: eventName,
-      eventData: eventData
-    }).toMessage({
+    LX.has('silly') && LX.log('silly', LT.add({ eventName, eventData }).toMessage({
       text: 'Forwarder receives an event[${eventName}]: ${eventData}'
     }));
-
     if (counselor.has(eventName)) {
       let requestId = (eventData && eventData.requestId) || that.anchorId || LT.getLogID();
       let reqTR = LT.branch({ key: 'requestId', value: requestId });
@@ -70,6 +66,11 @@ function Forwarder(params) {
       let rpcData = mapping.transformRequest ? mapping.transformRequest(eventData) : eventData;
       let ref = lookupMethod(mapping.serviceName, mapping.methodName);
       let refMethod = ref && ref.method;
+      LX.has('silly') && LX.log('silly', reqTR.add({
+        methodType: ref.isRemote ? 'remote' : 'local'
+      }).toMessage({
+        text: 'Request[${requestId}] is passed to a ${methodType} method'
+      }));
       if (lodash.isFunction(refMethod)) {
         let promize;
         if (ref.isRemote) {
@@ -87,31 +88,30 @@ function Forwarder(params) {
         }
         return promize.then(function(result) {
           let replyTo = mapping.replyTo || eventName;
-          LX.has('debug') && LX.log('debug', LT.add({
-            eventName: eventName,
-            eventData: eventData,
-            result: result,
-            replyTo: replyTo
-          }).toMessage({
+          LX.has('debug') && LX.log('debug', LT.add({ eventName, eventData, result, replyTo }).toMessage({
             text: 'event[${eventName}] has done -> ${replyTo}: ${result}'
           }));
-          that.socket.emit(replyTo, result);
+          if (typeof done === 'function') {
+            that.socket.emit(replyTo, result, done());
+          } else {
+            that.socket.emit(replyTo, result);
+          }
           return result;
         }).catch(function(error) {
-          let ename = lodash.get(pluginCfg, ['specialEvents', 'failed', 'name'], 'FAILED');
-          LX.has('error') && LX.log('error', LT.add({
-            eventName: eventName,
-            eventData: eventData,
-            error: error,
-            replyTo: ename
-          }).toMessage({
+          let replyTo = lodash.get(pluginCfg, ['specialEvents', 'failed', 'name'], 'FAILED');
+          LX.has('error') && LX.log('error', LT.add({ eventName, eventData, error, replyTo }).toMessage({
             text: 'event[${eventName}] has failed -> ${replyTo}: ${error}'
           }));
-          that.socket.emit(ename, {
+          let output = {
             status: -1,
             message: 'Service request has been failed',
             error: error
-          });
+          }
+          if (typeof done === 'function') {
+            that.socket.emit(replyTo, output, done(error));
+          } else {
+            that.socket.emit(replyTo, output);
+          }
           return error;
         });
       }
@@ -122,21 +122,13 @@ function Forwarder(params) {
   let unmatchedInterceptor = function(eventName, eventData, next) {
     let errorEvent = lodash.get(pluginCfg, ['specialEvents', 'unmatched', 'name'], null);
     if (errorEvent) {
-      LX.has('silly') && LX.log('silly', LT.add({
-        eventName: eventName,
-        eventData: eventData,
-        errorEvent: errorEvent
-      }).toMessage({
+      LX.has('silly') && LX.log('silly', LT.add({ eventName, eventData, errorEvent }).toMessage({
         tags: [ blockRef, 'unmatchedInterceptor' ],
         text: 'event[${eventName}] is reflected to ${errorEvent}'
       }));
       this.socket.emit(errorEvent, {name: eventName, data: eventData});
     } else {
-      LX.has('error') && LX.log('error', LT.add({
-        eventName: eventName,
-        eventData: eventData,
-        reason: 'not-found'
-      }).toMessage({
+      LX.has('error') && LX.log('error', LT.add({ eventName: eventName, eventData, reason: 'not-found' }).toMessage({
         tags: [ blockRef, 'unmatchedInterceptor' ],
         text: 'event[${eventName}] with data: ${eventData} is unmatched'
       }))
@@ -154,10 +146,7 @@ function Forwarder(params) {
 
   if (isTestingEnv()) {
     websocketTrigger.addInterceptor('___end___', function(eventName, eventData, next) {
-      LX.has('silly') && LX.log('silly', LT.add({
-        eventName: eventName,
-        eventData: eventData
-      }).toMessage({
+      LX.has('silly') && LX.log('silly', LT.add({ eventName, eventData }).toMessage({
         tags: [ blockRef, 'echoInterceptor' ],
         text: 'ping/pong the event[${eventName}] with data: ${eventData}'
       }));
@@ -167,6 +156,11 @@ function Forwarder(params) {
   }
 
   websocketTrigger.addInterceptor('exception', unmatchedInterceptor);
+
+  LX.has('silly') && LX.log('silly', LT.toMessage({
+    tags: [ blockRef, 'constructor-end' ],
+    text: ' - constructor end!'
+  }));
 }
 
 Forwarder.referenceList = [
