@@ -1,6 +1,6 @@
 {
   "name": "app-wsforwarder",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Devebot mapping opflow-worker plugin",
   "homepage": "https://github.com/apporo/app-wsforwarder.git",
   "author": {
@@ -31,12 +31,12 @@
     "devebot-plugin"
   ],
   "peerDependencies": {
-    "app-websocket": "^0.2.0",
-    "devebot": "^0.2.6"
+    "app-websocket": "^0.3.0",
+    "devebot": "^0.3.0"
   },
   "dependencies": {
-    "app-websocket": "^0.2.0",
-    "devebot": "^0.2.6"
+    "app-websocket": "^0.3.0",
+    "devebot": "^0.3.0"
   },
   "devDependencies": {
     "babel-cli": "^6.26.0",
